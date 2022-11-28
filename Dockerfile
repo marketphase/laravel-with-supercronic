@@ -14,11 +14,26 @@ ARG PHP_VERSION
 LABEL fly_launch_runtime="laravel"
 
 RUN apt-get update && apt-get install -y \
-    git curl zip unzip rsync ca-certificates vim htop cron \
+    git curl zip unzip rsync ca-certificates vim htop \
     php${PHP_VERSION}-pgsql php${PHP_VERSION}-bcmath \
     php${PHP_VERSION}-swoole php${PHP_VERSION}-xml php${PHP_VERSION}-mbstring \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Latest releases available at https://github.com/aptible/supercronic/releases
+ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.1/supercronic-linux-amd64 \
+    SUPERCRONIC=supercronic-linux-amd64 \
+    SUPERCRONIC_SHA1SUM=d7f4c0886eb85249ad05ed592902fa6865bb9d70
+
+RUN curl -fsSLO "$SUPERCRONIC_URL" \
+ && echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - \
+ && chmod +x "$SUPERCRONIC" \
+ && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
+ && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
+
+# You might need to change this depending on where your crontab is located
+COPY crontab crontab
+
 
 WORKDIR /var/www/html
 # copy application code, skipping files based on .dockerignore
